@@ -1,25 +1,96 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+author: "Akshika Baluapuri"
+date: "April 25, 2019"
+output: html_document
+    
 ---
 
-
-## Loading and preprocessing the data
-
-
-
-## What is mean total number of steps taken per day?
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 
-
-## What is the average daily activity pattern?
-
+## Q1 = Code for reading in the dataset and/or processing the data
 
 
-## Imputing missing values
+```{r echo=TRUE}
+library(lattice)
+act <- read.csv("repdata_data_activity1/activity.csv")
+```
 
 
+## Q2 = Histogram of the total number of steps taken each day
+```{r echo=TRUE}
+active <- aggregate(steps ~ date, data =  act, sum, na.rm =TRUE)
+ hist(active$steps, col = "blue")
 
-## Are there differences in activity patterns between weekdays and weekends?
+```
+
+
+## Q3 = Mean and median number of steps taken each day
+```{r echo=TRUE}
+ meanactive <- mean(active$steps)
+ maxactive <- max(active$steps)
+```
+
+## Q4 = Time series plot of the average number of steps taken
+```{r echo=TRUE}
+ avgstep <- aggregate(steps ~ interval , data= act, mean, na.rm = TRUE)
+ plot(avgstep, type = "l")
+ 
+```
+ 
+## Q5 =The 5-minute interval that, on average, contains the maximum number of steps
+```{r echo=TRUE}
+stepmax <-  avgstep[which.max(avgstep$steps),]$interval
+```
+## Q6 = Code to describe and show a strategy for imputing missing data
+```{r echo=TRUE}
+na <- sum(is.na(act$steps))
+```
+
+##Q7 = Histogram of the total number of steps taken each day after missing values are imputed
+```{r echo=TRUE}
+stepeachd <- function(interval){
+  avgstep[avgstep$interval == interval,]$steps
+}
+
+act1 <- act
+for (i in 1:nrow(act1)) {
+  if(is.na(act1[i,]$steps)){
+    act1[i,]$steps <- stepeachd(act1[i,]$interval)
+  }
+  
+}
+
+
+active1 <- aggregate(steps ~ date, data =  act1, sum)
+hist(active1$steps, col = "blue")
+
+meanactive1 <- mean(active1$steps)
+maxactive1 <- max(active1$steps)
+```
+## Q8 = Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+```{r echo=TRUE}
+act1$date <- as.Date(strptime(act1$date, format = "%Y-%m-%d"))
+act1$day <- weekdays(act1$date)
+for (i in 1:nrow(act1)) {
+  if(act1[i,]$day %in% c("Satuaday", "Sunday")){
+    act1[i,]$day <- "Weekend"
+  }
+    else{
+      
+      act1[i,]$day <- "Weekday"
+    }
+  }
+
+stepday <- aggregate(act1$steps ~ act1$interval + act1$day, act1, mean )
+names(stepday) <- c("interval", "day", "steps")
+xyplot(steps ~ interval | day ,data =  stepday, type = "l", layout(c(1,2)
+                  ))
+
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
